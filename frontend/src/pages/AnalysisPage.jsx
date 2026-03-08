@@ -1,542 +1,640 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ChevronLeft, Search, FileText, Copy, AlertTriangle,
-  CheckCircle, Sparkles, ChevronDown, ChevronUp,
-  Download, ArrowRight, X, Layers, Shield,
+    ChevronLeft, FileText, Copy, AlertTriangle, CheckCircle,
+    Sparkles, X, Layers, Shield, Download, ArrowRight,
+    ArrowLeft, Search, BarChart2, ChevronRight, RotateCcw, Check,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
-// ── Flag chips ─────────────────────────────────────────────────────────────────
+// ─── Shared helpers ───────────────────────────────────────────────────────────
 const FLAG_META = {
-  vague_verb:          { label: 'Vague Verb',         color: '#f87171', bg: 'rgba(248,113,113,0.1)'  },
-  weak_modal:          { label: 'Weak Modal',          color: '#fbbf24', bg: 'rgba(251,191,36,0.1)'   },
-  vague_word:          { label: 'Vague Word',          color: '#fb923c', bg: 'rgba(251,146,60,0.1)'   },
-  multiple_actions:    { label: 'Multiple Actions',    color: '#a78bfa', bg: 'rgba(167,139,250,0.1)'  },
-  missing_measurement: { label: 'Missing Measurement', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'   },
-  time_expression:     { label: 'Time Expression',     color: '#34d399', bg: 'rgba(52,211,153,0.1)'   },
-  quantity_expression: { label: 'Qty Expression',      color: '#f472b6', bg: 'rgba(244,114,182,0.1)'  },
-  too_short:           { label: 'Too Short',           color: '#94a3b8', bg: 'rgba(148,163,184,0.1)'  },
+    vague_verb: { label: 'Vague Verb', color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+    weak_modal: { label: 'Weak Modal', color: '#fbbf24', bg: 'rgba(251,191,36,0.1)' },
+    vague_word: { label: 'Vague Word', color: '#fb923c', bg: 'rgba(251,146,60,0.1)' },
+    multiple_actions: { label: 'Multi-Action', color: '#a78bfa', bg: 'rgba(167,139,250,0.1)' },
+    missing_measurement: { label: 'No Measurement', color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
+    time_expression: { label: 'Time Expression', color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
+    quantity_expression: { label: 'Qty Expression', color: '#f472b6', bg: 'rgba(244,114,182,0.1)' },
+    too_short: { label: 'Too Short', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
 };
-const getFlagMeta = (flag) => {
-  const key = Object.keys(FLAG_META).find(k => flag.startsWith(k));
-  return key ? FLAG_META[key] : { label: flag, color: '#8892a4', bg: 'rgba(136,146,164,0.1)' };
+const getFlagMeta = f => {
+    const k = Object.keys(FLAG_META).find(k => f.startsWith(k));
+    return k ? FLAG_META[k] : { label: f, color: '#8892a4', bg: 'rgba(136,146,164,0.1)' };
 };
-
-// ── Score bar ──────────────────────────────────────────────────────────────────
-const ScoreBar = ({ score, color }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-    <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
-      <motion.div
-        initial={{ width: 0 }} animate={{ width: `${(score || 0) * 100}%` }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-        style={{ height: '100%', background: color, borderRadius: '99px' }}
-      />
+const Chip = ({ flag }) => {
+    const m = getFlagMeta(flag);
+    const detail = flag.includes(':') ? `: ${flag.split(':')[1]}` : '';
+    return <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.72rem', fontWeight: '500', color: m.color, background: m.bg, border: `1px solid ${m.color}25`, borderRadius: '5px', padding: '3px 8px' }}>{m.label}{detail}</span>;
+};
+const ScoreBar = ({ score, color, label }) => (
+    <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</span>
+            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.7rem', color }}>{Math.round((score || 0) * 100)}%</span>
+        </div>
+        <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+            <motion.div initial={{ width: 0 }} animate={{ width: `${(score || 0) * 100}%` }} transition={{ duration: 0.9, ease: 'easeOut' }} style={{ height: '100%', background: color, borderRadius: '99px' }} />
+        </div>
     </div>
-    <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.7rem', color, minWidth: '32px', textAlign: 'right' }}>
-      {Math.round((score || 0) * 100)}%
-    </span>
-  </div>
 );
-
-// ── Requirement Card ───────────────────────────────────────────────────────────
-const ReqCard = ({ req, onViewRewrite }) => {
-  const [expanded, setExpanded] = useState(false);
-
-  const typeColor   = req.req_type === 'FR' ? '#e0bc6e' : req.req_type === 'NFR' ? '#60a5fa' : '#a78bfa';
-  const statusColor = req.is_ambiguous ? '#f87171' : req.is_duplicate ? '#fbbf24' : '#4ade80';
-  const statusLabel = req.is_ambiguous ? 'Ambiguous'  : req.is_duplicate ? 'Duplicate'  : 'Clean';
-  const flags       = req.ambiguity_flags || [];
-  const hasRewrite  = req.rewrites && req.rewrites.length > 0;
-  const rewrite     = hasRewrite ? req.rewrites[0] : null;
-  const decided     = rewrite && rewrite.action && rewrite.action !== 'pending';
-
-  return (
-    <div style={{
-      background: '#0d1018',
-      border: `1px solid ${expanded ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'}`,
-      borderRadius: '14px', overflow: 'hidden', transition: 'border-color 0.2s',
-    }}>
-      {/* ── Row ── */}
-      <div onClick={() => setExpanded(v => !v)}
-        style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '15px 18px', cursor: 'pointer' }}>
-
-        {/* ID */}
-        <div style={{ flexShrink: 0, padding: '3px 9px', borderRadius: '6px', marginTop: '1px', background: `${typeColor}15`, border: `1px solid ${typeColor}30`, fontFamily: "'DM Mono', monospace", fontSize: '0.72rem', color: typeColor, fontWeight: '600' }}>
-          {req.req_id}
-        </div>
-
-        {/* Text + flags */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', color: '#c8d0de', lineHeight: 1.6, fontWeight: '300', margin: 0, display: '-webkit-box', WebkitLineClamp: expanded ? 'unset' : 2, WebkitBoxOrient: 'vertical', overflow: expanded ? 'visible' : 'hidden' }}>
-            {req.current_text || req.original_text}
-          </p>
-          {flags.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '8px' }}>
-              {flags.map((f, i) => {
-                const m = getFlagMeta(f);
-                return <span key={i} style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', fontWeight: '500', color: m.color, background: m.bg, border: `1px solid ${m.color}30`, borderRadius: '5px', padding: '2px 7px' }}>
-                  {m.label}{f.includes(':') ? `: ${f.split(':')[1]}` : ''}
-                </span>;
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Badges + chevron */}
-        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {decided && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '6px', padding: '2px 8px' }}>
-              <CheckCircle size={10} color="#4ade80" />
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.68rem', color: '#4ade80' }}>Reviewed</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', background: `${statusColor}10`, border: `1px solid ${statusColor}25`, borderRadius: '6px', padding: '3px 9px' }}>
-            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: statusColor }} />
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.72rem', color: statusColor, fontWeight: '500' }}>{statusLabel}</span>
-          </div>
-          {expanded ? <ChevronUp size={14} color="#555f72" /> : <ChevronDown size={14} color="#555f72" />}
-        </div>
-      </div>
-
-      {/* ── Expanded ── */}
-      <AnimatePresence>
-        {expanded && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: 'hidden' }}>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
-              {/* Full original text */}
-              <div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Original Text</div>
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', color: '#8892a4', lineHeight: 1.65, margin: 0, fontWeight: '300' }}>{req.original_text}</p>
-              </div>
-
-              {/* Score bars */}
-              {(req.is_ambiguous || req.is_duplicate) && (
-                <div style={{ display: 'grid', gridTemplateColumns: req.is_ambiguous && req.is_duplicate ? '1fr 1fr' : '1fr', gap: '14px' }}>
-                  {req.is_ambiguous && (
-                    <div>
-                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Ambiguity Score</div>
-                      <ScoreBar score={req.ambiguity_score} color="#f87171" />
-                    </div>
-                  )}
-                  {req.is_duplicate && (
-                    <div>
-                      <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Similarity Score</div>
-                      <ScoreBar score={req.similarity_score} color="#fbbf24" />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Dup group */}
-              {req.is_duplicate && req.duplicate_group && (
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(251,191,36,0.05)', border: '1px solid rgba(251,191,36,0.15)', borderRadius: '8px', padding: '8px 14px' }}>
-                  <Layers size={13} color="#fbbf24" />
-                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.8rem', color: '#fbbf24' }}>Duplicate Group #{req.duplicate_group}</span>
-                </div>
-              )}
-
-              {/* Rewrite CTA */}
-              {hasRewrite && (
-                <motion.button onClick={() => onViewRewrite(req)} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-start', background: decided ? 'rgba(74,222,128,0.08)' : 'rgba(224,188,110,0.1)', border: decided ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(224,188,110,0.25)', borderRadius: '9px', color: decided ? '#4ade80' : '#e0bc6e', fontFamily: "'DM Sans', sans-serif", fontSize: '0.8rem', fontWeight: '500', padding: '8px 16px', cursor: 'pointer' }}>
-                  {decided ? <><CheckCircle size={13} /> Rewrite Reviewed</> : <><Sparkles size={13} /> View AI Rewrite <ArrowRight size={12} /></>}
-                </motion.button>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+const ProgressRing = ({ value, max, color, size = 80 }) => {
+    const pct = max ? value / max : 0;
+    const r = (size - 8) / 2;
+    const circ = 2 * Math.PI * r;
+    return (
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+            <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} />
+            <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={6}
+                strokeLinecap="round" strokeDasharray={circ}
+                initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: circ * (1 - pct) }}
+                transition={{ duration: 1.2, ease: 'easeOut' }} />
+        </svg>
+    );
 };
 
-// ── Rewrite Modal ──────────────────────────────────────────────────────────────
-const RewriteModal = ({ req, onClose, onSave }) => {
-  const rewrite = req?.rewrites?.[0];
-  const [action, setAction] = useState(rewrite?.action && rewrite.action !== 'pending' ? rewrite.action : null);
-  const [edited, setEdited] = useState(rewrite?.ai_rewritten_text || '');
-  const [saving, setSaving] = useState(false);
-  if (!rewrite) return null;
+// ─── Tab 1: Overview ──────────────────────────────────────────────────────────
+const OverviewTab = ({ reqs, onGoTo }) => {
+    const stats = useMemo(() => {
+        const dupGroups = new Set(reqs.filter(r => r.is_duplicate && r.duplicate_group).map(r => r.duplicate_group));
+        const resolvedGroups = new Set(
+            reqs.filter(r => r.is_duplicate && r.review_status === 'removed' && r.duplicate_group).map(r => r.duplicate_group)
+        );
+        return {
+            total: reqs.length,
+            ambig: reqs.filter(r => r.is_ambiguous).length,
+            dups: reqs.filter(r => r.is_duplicate).length,
+            dupGroups: dupGroups.size,
+            dupGroupsResolved: resolvedGroups.size,
+            clean: reqs.filter(r => !r.is_ambiguous && !r.is_duplicate).length,
+            reviewed: reqs.filter(r => r.rewrites?.some(rw => rw.action && rw.action !== 'pending')).length,
+        };
+    }, [reqs]);
 
-  const handle = async (act) => {
-    setSaving(true);
-    const final = act === 'rejected' ? req.original_text : act === 'edited' ? edited : rewrite.ai_rewritten_text;
-    await supabase.from('rewrites').update({ action: act, final_text: final, decided_at: new Date().toISOString() }).eq('id', rewrite.id);
-    if (act !== 'rejected') await supabase.from('requirements').update({ current_text: final, review_status: act }).eq('id', req.id);
-    setAction(act);
-    setSaving(false);
-    onSave(req.id, rewrite.id, act);
-    setTimeout(onClose, 900);
-  };
-
-  const already = !!action;
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
-      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.82)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '24px' }}>
-      <motion.div initial={{ scale: 0.94, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 24 }} onClick={e => e.stopPropagation()}
-        style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', width: '100%', maxWidth: '700px', maxHeight: '88vh', overflowY: 'auto' }}>
-
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Sparkles size={16} color="#a78bfa" />
-            </div>
-            <div>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '1rem', fontWeight: '700', color: '#fff' }}>AI Rewrite</div>
-              <div style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.7rem', color: '#e0bc6e' }}>{req.req_id}</div>
-            </div>
-          </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#555f72', cursor: 'pointer', padding: '7px', display: 'flex' }}><X size={15} /></button>
-        </div>
-
-        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
-
-          {/* Original */}
-          <div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Original</div>
-            <div style={{ background: 'rgba(248,113,113,0.05)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '10px', padding: '14px 16px' }}>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', color: '#c8d0de', lineHeight: 1.65, margin: 0, fontWeight: '300' }}>{req.original_text}</p>
-            </div>
-          </div>
-
-          {/* AI Rewritten */}
-          <div>
-            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>AI Rewritten</div>
-            <div style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.15)', borderRadius: '10px', padding: '14px 16px' }}>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', color: '#c8d0de', lineHeight: 1.65, margin: 0, fontWeight: '300' }}>{rewrite.ai_rewritten_text}</p>
-            </div>
-          </div>
-
-          {/* Edit textarea */}
-          {!already && (
-            <div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.7rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Edit Before Accepting</div>
-              <textarea value={edited} onChange={e => setEdited(e.target.value)} rows={4}
-                style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: '#c8d0de', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', lineHeight: 1.65, padding: '14px 16px', resize: 'vertical', outline: 'none', fontWeight: '300', boxSizing: 'border-box' }}
-                onFocus={e => e.target.style.borderColor = 'rgba(224,188,110,0.3)'}
-                onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
-              />
-            </div>
-          )}
-
-          {/* Actions */}
-          {!already ? (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <motion.button onClick={() => handle('accepted')} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '10px', color: '#4ade80', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', fontWeight: '500', padding: '12px', cursor: 'pointer' }}>
-                <CheckCircle size={15} /> Accept
-              </motion.button>
-              <motion.button onClick={() => handle('edited')} disabled={saving || edited === rewrite.ai_rewritten_text} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(224,188,110,0.1)', border: '1px solid rgba(224,188,110,0.25)', borderRadius: '10px', color: '#e0bc6e', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', fontWeight: '500', padding: '12px', cursor: 'pointer' }}>
-                <Sparkles size={15} /> Accept Edited
-              </motion.button>
-              <motion.button onClick={() => handle('rejected')} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', color: '#f87171', padding: '12px 16px', cursor: 'pointer' }}>
-                <X size={15} />
-              </motion.button>
-            </div>
-          ) : (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '14px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px' }}>
-              <CheckCircle size={16} color="#4ade80" />
-              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', color: '#4ade80' }}>
-                {action === 'accepted' ? 'Accepted!' : action === 'edited' ? 'Saved with edits!' : 'Rejected — keeping original'}
-              </span>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// MAIN PAGE
-// ══════════════════════════════════════════════════════════════════════════════
-export default function AnalysisPage() {
-  const { projectId } = useParams();
-  const navigate      = useNavigate();
-
-  const [project,    setProject]    = useState(null);
-  const [reqs,       setReqs]       = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [rewriteReq, setRewriteReq] = useState(null);
-  const [tab,        setTab]        = useState('all');
-  const [search,     setSearch]     = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-
-  // ── Load data directly from Supabase ──────────────────────────────────────
-  useEffect(() => {
-    if (!projectId) return;
-    (async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        // Project name
-        const { data: proj } = await supabase
-          .from('projects').select('id, name').eq('id', projectId).single();
-        setProject(proj);
-
-        // Latest run
-        const { data: runs, error: runErr } = await supabase
-          .from('analysis_runs')
-          .select('id, status, total_requirements, duplicate_groups, ambiguous_count, clean_count')
-          .eq('project_id', projectId)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (runErr) throw new Error(runErr.message);
-        if (!runs?.length) {
-          setError('No analysis runs found for this project. Please run a new analysis.');
-          return;
-        }
-
-        // Requirements + rewrites
-        const { data: requirements, error: reqErr } = await supabase
-          .from('requirements')
-          .select('*, rewrites(*)')
-          .eq('project_id', projectId)
-          .eq('analysis_run_id', runs[0].id)
-          .order('req_id');
-
-        if (reqErr) throw new Error(reqErr.message);
-        setReqs(requirements || []);
-
-      } catch (err) {
-        setError('Failed to load: ' + err.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [projectId]);
-
-  // ── Stats ──────────────────────────────────────────────────────────────────
-  const stats = useMemo(() => ({
-    total:     reqs.length,
-    dups:      reqs.filter(r => r.is_duplicate).length,
-    dupGroups: new Set(reqs.filter(r => r.is_duplicate).map(r => r.duplicate_group)).size,
-    ambig:     reqs.filter(r => r.is_ambiguous).length,
-    clean:     reqs.filter(r => !r.is_duplicate && !r.is_ambiguous).length,
-  }), [reqs]);
-
-  const reqTypes = useMemo(() => [...new Set(reqs.map(r => r.req_type))].filter(Boolean), [reqs]);
-
-  // ── Filtered list ──────────────────────────────────────────────────────────
-  const filtered = useMemo(() => {
-    let list = [...reqs];
-    if (tab === 'duplicates') list = list.filter(r => r.is_duplicate);
-    if (tab === 'ambiguous')  list = list.filter(r => r.is_ambiguous);
-    if (tab === 'clean')      list = list.filter(r => !r.is_duplicate && !r.is_ambiguous);
-    if (typeFilter !== 'all') list = list.filter(r => r.req_type === typeFilter);
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(r =>
-        r.req_id.toLowerCase().includes(q) ||
-        (r.current_text || r.original_text || '').toLowerCase().includes(q)
-      );
-    }
-    return list;
-  }, [reqs, tab, typeFilter, search]);
-
-  // ── Rewrite save callback ──────────────────────────────────────────────────
-  const handleRewriteSave = (reqId, rewriteId, action) => {
-    setReqs(prev => prev.map(r =>
-      r.id === reqId
-        ? { ...r, rewrites: r.rewrites.map(rw => rw.id === rewriteId ? { ...rw, action } : rw) }
-        : r
-    ));
-  };
-
-  const TABS = [
-    { id: 'all',        label: 'All',        count: stats.total, color: '#8892a4' },
-    { id: 'duplicates', label: 'Duplicates', count: stats.dups,  color: '#fbbf24' },
-    { id: 'ambiguous',  label: 'Ambiguous',  count: stats.ambig, color: '#f87171' },
-    { id: 'clean',      label: 'Clean',      count: stats.clean, color: '#4ade80' },
-  ];
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div style={{ minHeight: '100vh', background: '#0a0b0f', display: 'flex', flexDirection: 'column' }}>
-
-      {/* Header */}
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 28px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0d1018', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => navigate('/dashboard')}
-            onMouseEnter={e => e.currentTarget.style.color = '#c8d0de'}
-            onMouseLeave={e => e.currentTarget.style.color = '#555f72'}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#555f72', fontFamily: "'DM Sans', sans-serif", fontSize: '0.85rem', padding: 0, transition: 'color 0.2s' }}>
-            <ChevronLeft size={16} /> Dashboard
-          </button>
-          <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.08)' }} />
-          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', color: '#8892a4', fontWeight: '300' }}>
-            <span style={{ color: '#e0bc6e' }}>{project?.name || '...'}</span> — Analysis
-          </span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <motion.button onClick={() => navigate(`/report/${projectId}`)}
-            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-            style={{ display: 'flex', alignItems: 'center', gap: '7px', background: 'linear-gradient(135deg, #e0bc6e, #c49a3c)', border: 'none', borderRadius: '9px', color: '#0a0b0f', fontFamily: "'DM Sans', sans-serif", fontSize: '0.8rem', fontWeight: '600', padding: '8px 18px', cursor: 'pointer' }}>
-            <Download size={14} /> Export Report
-          </motion.button>
-          <img src={logo} alt="Reqify" style={{ height: '26px' }} />
-        </div>
-      </header>
-
-      {/* Loading */}
-      {loading && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-              style={{ width: '36px', height: '36px', border: '2px solid rgba(224,188,110,0.15)', borderTopColor: '#e0bc6e', borderRadius: '50%', margin: '0 auto 16px' }} />
-            <p style={{ fontFamily: "'DM Sans', sans-serif", color: '#555f72', fontSize: '0.9rem', fontWeight: '300' }}>Loading analysis...</p>
-          </div>
-        </div>
-      )}
-
-      {/* Error */}
-      {!loading && error && (
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ textAlign: 'center', maxWidth: '500px', padding: '0 24px' }}>
-            <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-              <AlertTriangle size={24} color="#f87171" />
-            </div>
-            <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1.1rem', color: '#fff', marginBottom: '10px' }}>Couldn't load analysis</h3>
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.8rem', color: '#f87171', lineHeight: 1.6, marginBottom: '24px' }}>{error}</p>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
-              <motion.button onClick={() => navigate(`/upload?project=${projectId}`)} whileHover={{ scale: 1.03 }}
-                style={{ background: 'linear-gradient(135deg, #e0bc6e, #c49a3c)', border: 'none', borderRadius: '10px', color: '#0a0b0f', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', fontWeight: '600', padding: '10px 22px', cursor: 'pointer' }}>
-                Run New Analysis
-              </motion.button>
-              <motion.button onClick={() => navigate('/dashboard')} whileHover={{ scale: 1.02 }}
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#8892a4', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', padding: '10px 22px', cursor: 'pointer' }}>
-                Dashboard
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main content */}
-      {!loading && !error && (
-        <div style={{ flex: 1, maxWidth: '1100px', width: '100%', margin: '0 auto', padding: '28px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-          {/* Stats row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
-            {[
-              { icon: FileText,      val: stats.total,     label: 'Total Reqs',  color: '#e0bc6e', bg: 'rgba(224,188,110,0.08)' },
-              { icon: Copy,          val: stats.dups,      label: 'Duplicates',  color: '#fbbf24', bg: 'rgba(251,191,36,0.08)'  },
-              { icon: Layers,        val: stats.dupGroups, label: 'Dup Groups',  color: '#fb923c', bg: 'rgba(251,146,60,0.08)'  },
-              { icon: AlertTriangle, val: stats.ambig,     label: 'Ambiguous',   color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
-              { icon: Shield,        val: stats.clean,     label: 'Clean',       color: '#4ade80', bg: 'rgba(74,222,128,0.08)'  },
-            ].map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}
-                style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '14px', padding: '16px', textAlign: 'center' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
-                  <s.icon size={15} color={s.color} />
-                </div>
-                <div style={{ fontFamily: "'Syne', sans-serif", fontSize: '1.75rem', fontWeight: '700', color: '#fff', lineHeight: 1, marginBottom: '4px' }}>{s.val}</div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.72rem', color: '#555f72' }}>{s.label}</div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* Empty state — data exists but requirements table is empty */}
-          {reqs.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '60px 0' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: 'rgba(224,188,110,0.08)', border: '1px solid rgba(224,188,110,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <FileText size={22} color="#e0bc6e" />
-              </div>
-              <h3 style={{ fontFamily: "'Syne', sans-serif", fontSize: '1.1rem', color: '#fff', marginBottom: '8px' }}>No requirements saved yet</h3>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", color: '#555f72', fontSize: '0.875rem', fontWeight: '300', marginBottom: '20px' }}>
-                The analysis run completed but no requirements were saved to the database.<br />This can happen if the pipeline failed mid-way. Try running a fresh analysis.
-              </p>
-              <motion.button onClick={() => navigate(`/upload?project=${projectId}`)} whileHover={{ scale: 1.03 }}
-                style={{ background: 'linear-gradient(135deg, #e0bc6e, #c49a3c)', border: 'none', borderRadius: '10px', color: '#0a0b0f', fontFamily: "'DM Sans', sans-serif", fontSize: '0.875rem', fontWeight: '600', padding: '10px 24px', cursor: 'pointer' }}>
-                Run New Analysis
-              </motion.button>
-            </div>
-          )}
-
-          {/* Tabs + Search — only show if we have data */}
-          {reqs.length > 0 && (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-                {/* Tabs */}
-                <div style={{ display: 'flex', gap: '4px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', padding: '4px' }}>
-                  {TABS.map(t => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: '7px', background: tab === t.id ? 'rgba(255,255,255,0.07)' : 'transparent', border: 'none', borderRadius: '9px', cursor: 'pointer', padding: '7px 14px', transition: 'all 0.2s' }}>
-                      <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.825rem', color: tab === t.id ? '#fff' : '#555f72', fontWeight: tab === t.id ? '500' : '400' }}>{t.label}</span>
-                      <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '0.68rem', fontWeight: '600', color: tab === t.id ? t.color : '#555f72', background: tab === t.id ? `${t.color}15` : 'transparent', border: `1px solid ${tab === t.id ? `${t.color}25` : 'transparent'}`, borderRadius: '5px', padding: '1px 6px' }}>{t.count}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* Search + type */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <div style={{ position: 'relative' }}>
-                    <Search size={13} color="#555f72" style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search requirements..."
-                      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '9px', color: '#c8d0de', fontFamily: "'DM Sans', sans-serif", fontSize: '0.825rem', padding: '8px 12px 8px 32px', outline: 'none', width: '220px', transition: 'border-color 0.2s' }}
-                      onFocus={e => e.target.style.borderColor = 'rgba(224,188,110,0.3)'}
-                      onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.07)'}
-                    />
-                  </div>
-                  <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
-                    style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '9px', color: '#8892a4', fontFamily: "'DM Sans', sans-serif", fontSize: '0.825rem', padding: '8px 12px', outline: 'none', cursor: 'pointer' }}>
-                    <option value="all">All Types</option>
-                    {reqTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {/* Count bar */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '0.8rem', color: '#555f72', fontWeight: '300' }}>
-                  Showing <span style={{ color: '#c8d0de' }}>{filtered.length}</span> of <span style={{ color: '#c8d0de' }}>{reqs.length}</span> requirements
-                </span>
-                {(search || typeFilter !== 'all') && (
-                  <button onClick={() => { setSearch(''); setTypeFilter('all'); }} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', cursor: 'pointer', color: '#555f72', fontFamily: "'DM Sans', sans-serif", fontSize: '0.78rem' }}>
-                    <X size={12} /> Clear filters
-                  </button>
-                )}
-              </div>
-
-              {/* Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '48px' }}>
-                {filtered.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '64px 0' }}>
-                    <Search size={28} color="#555f72" style={{ margin: '0 auto 14px', display: 'block' }} />
-                    <p style={{ fontFamily: "'DM Sans', sans-serif", color: '#555f72', fontSize: '0.9rem', fontWeight: '300', margin: 0 }}>No requirements match your filters.</p>
-                  </div>
-                ) : filtered.map((req, i) => (
-                  <motion.div key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.02, 0.5) }}>
-                    <ReqCard req={req} onViewRewrite={setRewriteReq} />
-                  </motion.div>
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Stat cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
+                {[
+                    { val: stats.total, label: 'Total Requirements', color: '#e0bc6e', bg: 'rgba(224,188,110,0.08)', icon: FileText },
+                    { val: stats.dupGroups, label: 'Duplicate Groups', color: '#fbbf24', bg: 'rgba(251,191,36,0.08)', icon: Copy },
+                    { val: stats.ambig, label: 'Ambiguous', color: '#f87171', bg: 'rgba(248,113,113,0.08)', icon: AlertTriangle },
+                    { val: stats.clean, label: 'Clean', color: '#4ade80', bg: 'rgba(74,222,128,0.08)', icon: Shield },
+                ].map((s, i) => (
+                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+                        style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                            <s.icon size={17} color={s.color} />
+                        </div>
+                        <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '2rem', fontWeight: '700', color: '#fff', lineHeight: 1, marginBottom: '5px' }}>{s.val}</div>
+                        <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.75rem', color: '#555f72' }}>{s.label}</div>
+                    </motion.div>
                 ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+            </div>
 
-      {/* Rewrite Modal */}
-      <AnimatePresence>
-        {rewriteReq && (
-          <RewriteModal
-            req={rewriteReq}
-            onClose={() => setRewriteReq(null)}
-            onSave={handleRewriteSave}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
+            {/* Progress panels */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                {/* Ambiguity */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}
+                    style={{ background: '#0d1018', border: '1px solid rgba(248,113,113,0.18)', borderRadius: '16px', padding: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                        <div>
+                            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '0.95rem', fontWeight: '700', color: '#fff', marginBottom: '3px' }}>Ambiguity Review</div>
+                            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.78rem', color: '#555f72', fontWeight: '300' }}>Accept or reject AI rewrites</div>
+                        </div>
+                        <ProgressRing value={stats.reviewed} max={stats.ambig} color="#f87171" size={68} />
+                    </div>
+                    <div style={{ marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.74rem', color: '#555f72' }}>Reviewed</span>
+                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.74rem', color: '#f87171' }}>{stats.reviewed} / {stats.ambig}</span>
+                        </div>
+                        <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${stats.ambig ? stats.reviewed / stats.ambig * 100 : 0}%` }} transition={{ duration: 1, ease: 'easeOut' }} style={{ height: '100%', background: '#f87171', borderRadius: '99px' }} />
+                        </div>
+                    </div>
+                    <motion.button onClick={() => onGoTo('ambiguous')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: '10px', color: '#f87171', fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', fontWeight: '500', padding: '10px', cursor: 'pointer' }}>
+                        <Sparkles size={14} /> Review Ambiguous <ArrowRight size={14} />
+                    </motion.button>
+                </motion.div>
+
+                {/* Duplicates */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.42 }}
+                    style={{ background: '#0d1018', border: '1px solid rgba(251,191,36,0.18)', borderRadius: '16px', padding: '22px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+                        <div>
+                            <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '0.95rem', fontWeight: '700', color: '#fff', marginBottom: '3px' }}>Duplicate Resolution</div>
+                            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.78rem', color: '#555f72', fontWeight: '300' }}>Pick which to keep</div>
+                        </div>
+                        <ProgressRing value={stats.dupGroupsResolved} max={stats.dupGroups} color="#fbbf24" size={68} />
+                    </div>
+                    <div style={{ marginBottom: '14px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.74rem', color: '#555f72' }}>Groups Resolved</span>
+                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.74rem', color: '#fbbf24' }}>{stats.dupGroupsResolved} / {stats.dupGroups}</span>
+                        </div>
+                        <div style={{ height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${stats.dupGroups ? stats.dupGroupsResolved / stats.dupGroups * 100 : 0}%` }} transition={{ duration: 1, ease: 'easeOut' }} style={{ height: '100%', background: '#fbbf24', borderRadius: '99px' }} />
+                        </div>
+                    </div>
+                    <motion.button onClick={() => onGoTo('duplicates')} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: '10px', color: '#fbbf24', fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', fontWeight: '500', padding: '10px', cursor: 'pointer' }}>
+                        <Layers size={14} /> Resolve Duplicates <ArrowRight size={14} />
+                    </motion.button>
+                </motion.div>
+            </div>
+
+            {/* Quality bar */}
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.52 }}
+                style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '16px', padding: '22px' }}>
+                <div style={{ fontFamily: "'Syne',sans-serif", fontSize: '0.9rem', fontWeight: '700', color: '#fff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BarChart2 size={15} color="#e0bc6e" /> SRS Quality Breakdown
+                </div>
+                <div style={{ display: 'flex', height: '10px', borderRadius: '99px', overflow: 'hidden', gap: '2px', marginBottom: '14px' }}>
+                    {[
+                        { val: stats.clean, color: '#4ade80' },
+                        { val: stats.ambig - stats.reviewed, color: '#f87171' },
+                        { val: stats.reviewed, color: '#a78bfa' },
+                        { val: stats.dups, color: '#fbbf24' },
+                    ].map((s, i) => (
+                        <motion.div key={i} initial={{ flex: 0 }} animate={{ flex: s.val }} transition={{ duration: 1, ease: 'easeOut', delay: 0.6 + i * 0.1 }}
+                            style={{ background: s.color, minWidth: s.val > 0 ? '4px' : 0 }} />
+                    ))}
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                    {[
+                        { color: '#4ade80', label: 'Clean', val: stats.clean },
+                        { color: '#f87171', label: 'Ambiguous (unreviewed)', val: stats.ambig - stats.reviewed },
+                        { color: '#a78bfa', label: 'Ambiguous (reviewed)', val: stats.reviewed },
+                        { color: '#fbbf24', label: 'Duplicate', val: stats.dups },
+                    ].map((s, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: s.color }} />
+                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.75rem', color: '#8892a4' }}>{s.label}</span>
+                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.75rem', color: s.color }}>{s.val}</span>
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+        </div>
+    );
+};
+
+// ─── Tab 2: Duplicates ────────────────────────────────────────────────────────
+const DuplicatesTab = ({ reqs, onUpdate }) => {
+    const groups = useMemo(() => {
+        const map = {};
+        reqs.filter(r => r.is_duplicate && r.duplicate_group).forEach(r => {
+            if (!map[r.duplicate_group]) map[r.duplicate_group] = [];
+            map[r.duplicate_group].push(r);
+        });
+        return Object.entries(map).map(([num, members]) => ({ num: parseInt(num), members }));
+    }, [reqs]);
+
+    const [saving, setSaving] = useState(null);
+
+    const resolved = groups.filter(g => g.members.some(m => m.review_status === 'removed')).length;
+
+    const keepThis = async (keepReq, removeReqs) => {
+        setSaving(keepReq.id);
+        await Promise.all(removeReqs.map(r => supabase.from('requirements').update({ review_status: 'removed' }).eq('id', r.id)));
+        await supabase.from('requirements').update({ review_status: 'kept' }).eq('id', keepReq.id);
+        removeReqs.forEach(r => onUpdate(r.id, { review_status: 'removed' }));
+        onUpdate(keepReq.id, { review_status: 'kept' });
+        setSaving(null);
+    };
+
+    const undoGroup = async (group) => {
+        await Promise.all(group.members.map(r => supabase.from('requirements').update({ review_status: null }).eq('id', r.id)));
+        group.members.forEach(r => onUpdate(r.id, { review_status: null }));
+    };
+
+    if (!groups.length) return (
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Shield size={32} color="#4ade80" style={{ margin: '0 auto 12px', display: 'block' }} />
+            <p style={{ fontFamily: "'Syne',sans-serif", color: '#4ade80', fontSize: '1rem', fontWeight: '600' }}>No duplicates found</p>
+        </div>
+    );
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.82rem', color: '#555f72' }}>
+                    <span style={{ color: '#fbbf24', fontWeight: '600' }}>{resolved}</span> of <span style={{ color: '#fff' }}>{groups.length}</span> groups resolved
+                </span>
+            </div>
+
+            {groups.map((group, gi) => {
+                const isResolved = group.members.some(m => m.review_status === 'removed');
+                return (
+                    <motion.div key={group.num} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: gi * 0.04 }}
+                        style={{ background: '#0d1018', border: `1px solid ${isResolved ? 'rgba(74,222,128,0.2)' : 'rgba(251,191,36,0.15)'}`, borderRadius: '16px', overflow: 'hidden' }}>
+
+                        {/* Group header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ width: '28px', height: '28px', borderRadius: '8px', background: isResolved ? 'rgba(74,222,128,0.1)' : 'rgba(251,191,36,0.1)', border: `1px solid ${isResolved ? 'rgba(74,222,128,0.25)' : 'rgba(251,191,36,0.25)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {isResolved ? <CheckCircle size={13} color="#4ade80" /> : <Layers size={13} color="#fbbf24" />}
+                                </div>
+                                <span style={{ fontFamily: "'Syne',sans-serif", fontSize: '0.875rem', fontWeight: '700', color: '#fff' }}>Group #{group.num}</span>
+                                <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.75rem', color: '#555f72' }}>{group.members.length} requirements</span>
+                                {isResolved && <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '5px', padding: '2px 8px' }}>Resolved</span>}
+                            </div>
+                            {isResolved && (
+                                <button onClick={() => undoGroup(group)} style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '7px', color: '#555f72', fontFamily: "'DM Sans',sans-serif", fontSize: '0.72rem', padding: '5px 10px', cursor: 'pointer' }}>
+                                    <RotateCcw size={11} /> Undo
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Side by side */}
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(group.members.length, 2)},1fr)`, gap: '1px', background: 'rgba(255,255,255,0.04)' }}>
+                            {group.members.map((req) => {
+                                const typeColor = req.req_type === 'FR' ? '#e0bc6e' : '#60a5fa';
+                                const isKept = req.review_status === 'kept';
+                                const isRemoved = req.review_status === 'removed';
+                                const isSaving = saving === req.id;
+                                return (
+                                    <div key={req.id} style={{ background: isKept ? 'rgba(74,222,128,0.04)' : isRemoved ? 'rgba(248,113,113,0.03)' : '#0d1018', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '12px', opacity: isRemoved ? 0.5 : 1, transition: 'all 0.3s' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.72rem', color: typeColor, background: `${typeColor}12`, border: `1px solid ${typeColor}25`, borderRadius: '5px', padding: '2px 8px', fontWeight: '700' }}>{req.req_id}</span>
+                                            {isKept && <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.68rem', color: '#4ade80', background: 'rgba(74,222,128,0.1)', borderRadius: '4px', padding: '2px 7px' }}>✓ Kept</span>}
+                                            {isRemoved && <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.68rem', color: '#f87171', background: 'rgba(248,113,113,0.1)', borderRadius: '4px', padding: '2px 7px' }}>✕ Removed</span>}
+                                            {req.similarity_score && <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.65rem', color: '#fbbf24', marginLeft: 'auto' }}>{Math.round(req.similarity_score * 100)}% similar</span>}
+                                        </div>
+                                        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.855rem', color: isRemoved ? '#555f72' : '#c8d0de', lineHeight: 1.65, margin: 0, fontWeight: '300', textDecoration: isRemoved ? 'line-through' : 'none' }}>
+                                            {req.original_text}
+                                        </p>
+                                        {!isResolved && (
+                                            <motion.button onClick={() => keepThis(req, group.members.filter(m => m.id !== req.id))} disabled={!!saving}
+                                                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.22)', borderRadius: '9px', color: '#4ade80', fontFamily: "'DM Sans',sans-serif", fontSize: '0.8rem', fontWeight: '500', padding: '9px', cursor: 'pointer', opacity: saving && !isSaving ? 0.5 : 1 }}>
+                                                {isSaving ? 'Saving...' : <><Check size={13} /> Keep This One</>}
+                                            </motion.button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+                );
+            })}
+        </div>
+    );
+};
+
+// ─── Tab 3: Ambiguous ─────────────────────────────────────────────────────────
+const AmbiguousTab = ({ reqs, onUpdate }) => {
+    const ambiguous = useMemo(() =>
+        reqs.filter(r => r.is_ambiguous).sort((a, b) => (b.ambiguity_score || 0) - (a.ambiguity_score || 0)),
+        [reqs]
+    );
+    const [idx, setIdx] = useState(0);
+    const [edited, setEdited] = useState('');
+    const [saving, setSaving] = useState(false);
+    const [allDone, setAllDone] = useState(false);
+
+    const current = ambiguous[idx];
+    const rw = current?.rewrites?.[0];
+    const decided = rw?.action && rw.action !== 'pending';
+    const reviewed = ambiguous.filter(r => r.rewrites?.some(rw => rw.action && rw.action !== 'pending')).length;
+
+    useEffect(() => { if (current) setEdited(rw?.ai_rewritten_text || ''); }, [idx, current?.id]);
+
+    const handle = async (action) => {
+        if (!rw || !current) return;
+        setSaving(true);
+        const finalText = action === 'rejected' ? current.original_text : action === 'edited' ? edited : rw.ai_rewritten_text;
+        await supabase.from('rewrites').update({ action, final_text: finalText, decided_at: new Date().toISOString() }).eq('id', rw.id);
+        if (action !== 'rejected') await supabase.from('requirements').update({ current_text: finalText, review_status: action }).eq('id', current.id);
+        onUpdate(current.id, {
+            review_status: action,
+            current_text: action !== 'rejected' ? finalText : current.current_text,
+            rewrites: current.rewrites.map(r2 => r2.id === rw.id ? { ...r2, action, final_text: finalText } : r2),
+        });
+        setSaving(false);
+        if (idx < ambiguous.length - 1) setTimeout(() => setIdx(i => i + 1), 300);
+        else setAllDone(true);
+    };
+
+    if (!ambiguous.length) return (
+        <div style={{ textAlign: 'center', padding: '64px 0' }}>
+            <Shield size={32} color="#4ade80" style={{ margin: '0 auto 12px', display: 'block' }} />
+            <p style={{ fontFamily: "'Syne',sans-serif", color: '#4ade80', fontSize: '1rem', fontWeight: '600' }}>No ambiguous requirements</p>
+        </div>
+    );
+
+    if (allDone || idx >= ambiguous.length) return (
+        <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} style={{ textAlign: 'center', padding: '64px 0' }}>
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}
+                style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <CheckCircle size={32} color="#4ade80" />
+            </motion.div>
+            <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: '1.3rem', fontWeight: '700', color: '#fff', marginBottom: '8px' }}>All Reviewed!</h3>
+            <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', color: '#555f72', fontWeight: '300', marginBottom: '24px' }}>{reviewed} of {ambiguous.length} reviewed</p>
+            <button onClick={() => { setIdx(0); setAllDone(false); }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#8892a4', fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', padding: '10px 18px', cursor: 'pointer' }}>
+                <RotateCcw size={13} /> Review Again
+            </button>
+        </motion.div>
+    );
+
+    const typeColor = current.req_type === 'FR' ? '#e0bc6e' : '#60a5fa';
+    const flags = current.ambiguity_flags || [];
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '800px', margin: '0 auto' }}>
+            {/* Progress */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ flex: 1, height: '5px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden' }}>
+                    <motion.div animate={{ width: `${(idx + 1) / ambiguous.length * 100}%` }} transition={{ duration: 0.35 }}
+                        style={{ height: '100%', background: 'linear-gradient(90deg,#f87171,#a78bfa)', borderRadius: '99px' }} />
+                </div>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.75rem', color: '#555f72', flexShrink: 0 }}>{idx + 1} / {ambiguous.length}</span>
+            </div>
+
+            <AnimatePresence mode="wait">
+                <motion.div key={current.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}
+                    style={{ background: '#0d1018', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '18px', overflow: 'hidden' }}>
+
+                    {/* Card header */}
+                    <div style={{ padding: '16px 22px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.8rem', color: typeColor, background: `${typeColor}12`, border: `1px solid ${typeColor}25`, borderRadius: '6px', padding: '3px 10px', fontWeight: '700' }}>{current.req_id}</span>
+                        {decided && <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '5px', padding: '2px 8px' }}>✓ Reviewed</span>}
+                        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.72rem', color: '#555f72' }}>Score</span>
+                            <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.8rem', color: '#f87171', fontWeight: '700' }}>{Math.round((current.ambiguity_score || 0) * 100)}%</span>
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Original */}
+                        <div>
+                            <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.68rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '9px' }}>Original Requirement</div>
+                            <div style={{ background: 'rgba(248,113,113,0.05)', border: '1px solid rgba(248,113,113,0.15)', borderRadius: '12px', padding: '15px' }}>
+                                <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.7, margin: 0, fontWeight: '300' }}>{current.original_text}</p>
+                            </div>
+                        </div>
+
+                        {/* Flags */}
+                        {flags.length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                                <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.7rem', color: '#555f72', marginRight: '2px' }}>Issues:</span>
+                                {flags.map((f, i) => <Chip key={i} flag={f} />)}
+                            </div>
+                        )}
+
+                        {rw ? (
+                            <>
+                                {/* AI rewrite */}
+                                <div>
+                                    <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.68rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '9px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <Sparkles size={11} color="#a78bfa" /> AI Rewritten
+                                    </div>
+                                    <div style={{ background: 'rgba(167,139,250,0.05)', border: '1px solid rgba(167,139,250,0.18)', borderRadius: '12px', padding: '15px' }}>
+                                        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.7, margin: 0, fontWeight: '300' }}>{rw.ai_rewritten_text}</p>
+                                    </div>
+                                </div>
+
+                                {/* Edit */}
+                                {!decided && (
+                                    <div>
+                                        <div style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.68rem', color: '#555f72', textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: '9px' }}>Edit Before Accepting</div>
+                                        <textarea value={edited} onChange={e => setEdited(e.target.value)} rows={3}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '11px', color: '#c8d0de', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', lineHeight: 1.65, padding: '13px 15px', resize: 'vertical', outline: 'none', fontWeight: '300', boxSizing: 'border-box' }}
+                                            onFocus={e => e.target.style.borderColor = 'rgba(224,188,110,0.3)'}
+                                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                {!decided ? (
+                                    <div style={{ display: 'flex', gap: '9px' }}>
+                                        <motion.button onClick={() => handle('accepted')} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.28)', borderRadius: '11px', color: '#4ade80', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', fontWeight: '500', padding: '12px', cursor: 'pointer' }}>
+                                            <CheckCircle size={15} /> Accept
+                                        </motion.button>
+                                        <motion.button onClick={() => handle('edited')} disabled={saving || edited === rw.ai_rewritten_text} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px', background: 'rgba(224,188,110,0.1)', border: '1px solid rgba(224,188,110,0.28)', borderRadius: '11px', color: '#e0bc6e', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', fontWeight: '500', padding: '12px', cursor: 'pointer', opacity: edited === rw.ai_rewritten_text ? 0.4 : 1 }}>
+                                            <Sparkles size={15} /> Accept Edited
+                                        </motion.button>
+                                        <motion.button onClick={() => handle('rejected')} disabled={saving} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.22)', borderRadius: '11px', color: '#f87171', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', fontWeight: '500', padding: '12px 16px', cursor: 'pointer' }}>
+                                            <X size={15} /> Reject
+                                        </motion.button>
+                                        <button onClick={() => setIdx(i => i + 1)} disabled={idx >= ambiguous.length - 1}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '11px', color: '#555f72', padding: '12px 13px', cursor: 'pointer', opacity: idx >= ambiguous.length - 1 ? 0.3 : 1 }}>
+                                            <ChevronRight size={16} />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '9px', alignItems: 'center' }}>
+                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '9px', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.18)', borderRadius: '11px', padding: '11px 15px' }}>
+                                            <CheckCircle size={15} color="#4ade80" />
+                                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', color: '#4ade80' }}>
+                                                {rw.action === 'accepted' ? 'Accepted' : rw.action === 'edited' ? 'Accepted with edits' : 'Rejected — keeping original'}
+                                            </span>
+                                        </div>
+                                        <button onClick={() => setIdx(i => i + 1)} disabled={idx >= ambiguous.length - 1}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '11px', color: '#8892a4', fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', fontWeight: '500', padding: '11px 16px', cursor: 'pointer', opacity: idx >= ambiguous.length - 1 ? 0.3 : 1 }}>
+                                            Next <ChevronRight size={14} />
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <div style={{ padding: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', textAlign: 'center' }}>
+                                <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', color: '#555f72', fontWeight: '300', margin: 0 }}>No AI rewrite available for this requirement</p>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Prev / dot nav / next */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <button onClick={() => setIdx(i => Math.max(0, i - 1))} disabled={idx === 0}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '9px', color: '#555f72', fontFamily: "'DM Sans',sans-serif", fontSize: '0.8rem', padding: '8px 14px', cursor: idx === 0 ? 'not-allowed' : 'pointer', opacity: idx === 0 ? 0.3 : 1 }}>
+                    <ArrowLeft size={14} /> Previous
+                </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                    {ambiguous.slice(Math.max(0, idx - 4), idx + 5).map((r, i) => {
+                        const ai = Math.max(0, idx - 4) + i;
+                        const isRev = r.rewrites?.some(rw => rw.action && rw.action !== 'pending');
+                        return <button key={r.id} onClick={() => setIdx(ai)} style={{ width: '8px', height: '8px', borderRadius: '50%', background: ai === idx ? '#e0bc6e' : isRev ? '#4ade80' : 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', padding: 0, transition: 'all 0.2s' }} />;
+                    })}
+                </div>
+                <button onClick={() => setIdx(i => Math.min(ambiguous.length - 1, i + 1))} disabled={idx >= ambiguous.length - 1}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '9px', color: '#555f72', fontFamily: "'DM Sans',sans-serif", fontSize: '0.8rem', padding: '8px 14px', cursor: idx >= ambiguous.length - 1 ? 'not-allowed' : 'pointer', opacity: idx >= ambiguous.length - 1 ? 0.3 : 1 }}>
+                    Next <ArrowRight size={14} />
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// ─── Tab 4: Clean ─────────────────────────────────────────────────────────────
+const CleanTab = ({ reqs }) => {
+    const clean = useMemo(() => reqs.filter(r => !r.is_ambiguous && !r.is_duplicate), [reqs]);
+    const [search, setSearch] = useState('');
+    const filtered = useMemo(() => {
+        if (!search.trim()) return clean;
+        const q = search.toLowerCase();
+        return clean.filter(r => r.req_id.toLowerCase().includes(q) || (r.current_text || r.original_text || '').toLowerCase().includes(q));
+    }, [clean, search]);
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <Search size={13} color="#555f72" style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                    <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search clean requirements..."
+                        style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '9px', color: '#c8d0de', fontFamily: "'DM Sans',sans-serif", fontSize: '0.82rem', padding: '9px 12px 9px 30px', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                        onFocus={e => e.target.style.borderColor = 'rgba(74,222,128,0.3)'}
+                        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.07)'} />
+                </div>
+                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.75rem', color: '#4ade80', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '6px', padding: '6px 11px', flexShrink: 0 }}>{filtered.length}</span>
+            </div>
+            {filtered.map((req, i) => {
+                const typeColor = req.req_type === 'FR' ? '#e0bc6e' : req.req_type === 'NFR' ? '#60a5fa' : '#a78bfa';
+                return (
+                    <motion.div key={req.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.012, 0.4) }}
+                        style={{ background: '#0d1018', border: '1px solid rgba(74,222,128,0.07)', borderRadius: '11px', padding: '13px 18px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                        <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.72rem', color: typeColor, background: `${typeColor}12`, border: `1px solid ${typeColor}25`, borderRadius: '5px', padding: '2px 8px', fontWeight: '700', flexShrink: 0, marginTop: '2px' }}>{req.req_id}</span>
+                        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', color: '#8892a4', lineHeight: 1.6, margin: 0, fontWeight: '300' }}>{req.current_text || req.original_text}</p>
+                        <Shield size={13} color="rgba(74,222,128,0.3)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                    </motion.div>
+                );
+            })}
+            {filtered.length === 0 && <div style={{ textAlign: 'center', padding: '40px 0' }}><p style={{ fontFamily: "'DM Sans',sans-serif", color: '#3a4252', fontSize: '0.85rem', fontWeight: '300' }}>No requirements match</p></div>}
+        </div>
+    );
+};
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function AnalysisPage() {
+    const { id: projectId } = useParams();
+    const navigate = useNavigate();
+    const [project, setProject] = useState(null);
+    const [reqs, setReqs] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [tab, setTab] = useState('overview');
+
+    useEffect(() => {
+        if (!projectId) return;
+        (async () => {
+            try {
+                setLoading(true);
+                const { data: proj } = await supabase.from('projects').select('id,name').eq('id', projectId).single();
+                setProject(proj);
+                const { data: runs, error: runErr } = await supabase.from('analysis_runs').select('id').eq('project_id', projectId).order('started_at', { ascending: false }).limit(1);
+                if (runErr || !runs?.length) { setError('No analysis found. Please run a new analysis.'); return; }
+                const { data: requirements, error: reqErr } = await supabase.from('requirements').select('*,rewrites(*)').eq('project_id', projectId).eq('analysis_run_id', runs[0].id).order('req_id');
+                if (reqErr) throw new Error(reqErr.message);
+                setReqs(requirements || []);
+            } catch (err) { setError(err.message); }
+            finally { setLoading(false); }
+        })();
+    }, [projectId]);
+
+    const handleUpdate = useCallback((reqId, patch) => {
+        setReqs(prev => prev.map(r => r.id === reqId ? { ...r, ...patch } : r));
+    }, []);
+
+    const counts = useMemo(() => ({
+        dups: reqs.filter(r => r.is_duplicate).length,
+        ambig: reqs.filter(r => r.is_ambiguous).length,
+        clean: reqs.filter(r => !r.is_duplicate && !r.is_ambiguous).length,
+    }), [reqs]);
+
+    const TABS = [
+        { id: 'overview', label: 'Overview', icon: BarChart2, color: '#e0bc6e' },
+        { id: 'duplicates', label: 'Duplicates', icon: Copy, color: '#fbbf24', count: counts.dups },
+        { id: 'ambiguous', label: 'Ambiguous', icon: AlertTriangle, color: '#f87171', count: counts.ambig },
+        { id: 'clean', label: 'Clean', icon: Shield, color: '#4ade80', count: counts.clean },
+    ];
+
+    if (loading) return (
+        <div style={{ minHeight: '100vh', background: '#0a0b0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }} style={{ width: '38px', height: '38px', border: '2px solid rgba(224,188,110,0.12)', borderTopColor: '#e0bc6e', borderRadius: '50%', margin: '0 auto 16px' }} />
+                <p style={{ fontFamily: "'DM Sans',sans-serif", color: '#555f72', fontSize: '0.9rem', fontWeight: '300' }}>Loading analysis...</p>
+            </div>
+        </div>
+    );
+
+    if (error) return (
+        <div style={{ minHeight: '100vh', background: '#0a0b0f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center', maxWidth: '460px', padding: '0 24px' }}>
+                <AlertTriangle size={32} color="#f87171" style={{ margin: '0 auto 16px', display: 'block' }} />
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: '1.1rem', color: '#fff', marginBottom: '10px' }}>Couldn't load analysis</h3>
+                <p style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.8rem', color: '#f87171', lineHeight: 1.6, marginBottom: '24px' }}>{error}</p>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                    <button onClick={() => navigate(`/upload?project=${projectId}`)} style={{ background: 'linear-gradient(135deg,#e0bc6e,#c49a3c)', border: 'none', borderRadius: '10px', color: '#0a0b0f', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', fontWeight: '600', padding: '10px 22px', cursor: 'pointer' }}>Run New Analysis</button>
+                    <button onClick={() => navigate('/dashboard')} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: '#8892a4', fontFamily: "'DM Sans',sans-serif", fontSize: '0.875rem', padding: '10px 22px', cursor: 'pointer' }}>Dashboard</button>
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div style={{ minHeight: '100vh', background: '#0a0b0f', display: 'flex', flexDirection: 'column' }}>
+            {/* Header */}
+            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', height: '56px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: '#0d1018', position: 'sticky', top: 0, zIndex: 50 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <button onClick={() => navigate('/dashboard')}
+                        onMouseEnter={e => e.currentTarget.style.color = '#c8d0de'}
+                        onMouseLeave={e => e.currentTarget.style.color = '#555f72'}
+                        style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', cursor: 'pointer', color: '#555f72', fontFamily: "'DM Sans',sans-serif", fontSize: '0.825rem', padding: 0, transition: 'color 0.2s' }}>
+                        <ChevronLeft size={15} /> Dashboard
+                    </button>
+                    <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.08)' }} />
+                    <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.825rem', color: '#8892a4', fontWeight: '300' }}>
+                        <span style={{ color: '#e0bc6e' }}>{project?.name}</span> — Analysis
+                    </span>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <motion.button onClick={() => navigate(`/report/${projectId}`)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg,#e0bc6e,#c49a3c)', border: 'none', borderRadius: '8px', color: '#0a0b0f', fontFamily: "'DM Sans',sans-serif", fontSize: '0.8rem', fontWeight: '700', padding: '8px 18px', cursor: 'pointer' }}>
+                        <Download size={13} /> Export Report
+                    </motion.button>
+                    <img src={logo} alt="Reqify" style={{ height: '25px' }} />
+                </div>
+            </header>
+
+            {/* Tab bar */}
+            <div style={{ background: '#0d1018', borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '0 28px', display: 'flex', gap: '2px', position: 'sticky', top: '56px', zIndex: 40 }}>
+                {TABS.map(t => {
+                    const Icon = t.icon;
+                    const active = tab === t.id;
+                    return (
+                        <button key={t.id} onClick={() => setTab(t.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '7px', background: 'none', border: 'none', borderBottom: `2px solid ${active ? t.color : 'transparent'}`, cursor: 'pointer', padding: '14px 18px', transition: 'all 0.2s', marginBottom: '-1px' }}>
+                            <Icon size={14} color={active ? t.color : '#555f72'} />
+                            <span style={{ fontFamily: "'DM Sans',sans-serif", fontSize: '0.85rem', fontWeight: active ? '600' : '400', color: active ? '#fff' : '#555f72', transition: 'color 0.2s' }}>{t.label}</span>
+                            {t.count !== undefined && (
+                                <span style={{ fontFamily: "'DM Mono',monospace", fontSize: '0.7rem', fontWeight: '700', color: active ? t.color : '#3a4252', background: active ? `${t.color}15` : 'transparent', border: `1px solid ${active ? `${t.color}25` : 'transparent'}`, borderRadius: '5px', padding: '1px 6px', transition: 'all 0.2s' }}>{t.count}</span>
+                            )}
+                        </button>
+                    );
+                })}
+            </div>
+
+            {/* Content */}
+            <div style={{ flex: 1, maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '28px 24px 56px' }}>
+                <AnimatePresence mode="wait">
+                    <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+                        {tab === 'overview' && <OverviewTab reqs={reqs} onGoTo={setTab} />}
+                        {tab === 'duplicates' && <DuplicatesTab reqs={reqs} onUpdate={handleUpdate} />}
+                        {tab === 'ambiguous' && <AmbiguousTab reqs={reqs} onUpdate={handleUpdate} />}
+                        {tab === 'clean' && <CleanTab reqs={reqs} />}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        </div>
+    );
 }
