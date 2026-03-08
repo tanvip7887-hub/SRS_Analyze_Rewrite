@@ -1080,8 +1080,8 @@
         },
         "FR-131": {
             "flags": [
-                "missing_measurement",
-                "weak_modal:should"
+                "weak_modal:should",
+                "missing_measurement"
             ],
             "ambiguity_score": 0.67
         },
