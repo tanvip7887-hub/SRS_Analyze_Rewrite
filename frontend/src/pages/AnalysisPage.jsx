@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, FileText, Copy, AlertTriangle, CheckCircle, Sparkles, X, Layers, Shield, Download, ArrowRight, ArrowLeft, Search, BarChart2, ChevronRight, RotateCcw, Check, GitCompare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import logo from '../assets/logo.png';
+import logo from '../assets/Logo.png';
 
 // â”€â”€â”€ Shared helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const FLAG_META = {

@@ -743,7 +743,7 @@ export function CTABanner() {
 
 
 // ─── Footer.jsx ───────────────────────────────────────────────────────────────
-import logo from '../../assets/logo.png';
+import logo from '../../assets/Logo.png';
 
 export function Footer() {
     const links = {

@@ -8,7 +8,7 @@ import {
 import { useAuth }    from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
 import { uploadSRS, processSRS, rewriteSRS, parseRequirements, parseStats } from '../lib/api';
-import logo from '../assets/logo.png';
+import logo from '../assets/Logo.png';
 
 const STEPS = [
   { id: 'upload',  icon: Upload,     label: 'Uploading File',          desc: 'Sending your .docx to the analysis engine'    },

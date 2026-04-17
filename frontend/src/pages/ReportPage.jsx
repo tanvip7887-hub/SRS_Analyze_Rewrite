@@ -7,7 +7,7 @@ import {
   File, FileSpreadsheet, BookOpen, Clock,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import logo from '../assets/logo.png';
+import logo from '../assets/Logo.png';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

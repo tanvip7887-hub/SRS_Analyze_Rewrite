@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, ArrowRight } from 'lucide-react';
-import logo from '../../assets/logo.png';
+import logo from '../../assets/Logo.png';
 
 const navLinks = [
     { label: 'Features', href: '#features' },

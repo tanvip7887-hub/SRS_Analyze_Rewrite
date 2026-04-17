@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useProject } from '../context/ProjectContext';
-import logo from '../assets/logo.png';
+import logo from '../assets/Logo.png';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatDate = (iso) => new Date(iso).toLocaleDateString('en-US', {
