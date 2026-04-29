@@ -1,5 +1,5 @@
 {
-    "total_ambiguous": 82,
+    "total_ambiguous": 67,
     "rewritten": [
         {
             "id": "FR-01",
@@ -335,81 +335,6 @@
             "id": "NFR-15",
             "original": "The system SHALL implement caching mechanisms to reduce resource utilization for frequently accessed data.",
             "rewritten": "The system SHALL implement caching mechanisms to reduce resource utilization for frequently accessed data."
-        },
-        {
-            "id": "NFR-27",
-            "original": "The system SHALL implement secure session management with appropriate timeout settings.",
-            "rewritten": "The system SHALL implement secure session management with appropriate timeout settings."
-        },
-        {
-            "id": "NFR-35",
-            "original": "The system SHALL maintain separate environments for development, testing, and production with appropriate data isolation.",
-            "rewritten": "The system SHALL maintain separate environments for development, testing, and production with appropriate data isolation."
-        },
-        {
-            "id": "NFR-40",
-            "original": "The system SHALL provide clear privacy notices and obtain appropriate consent for data collection and processing.",
-            "rewritten": "The system SHALL provide clear privacy notices and obtain appropriate consent for data collection and processing."
-        },
-        {
-            "id": "NFR-68",
-            "original": "The system SHALL handle input validation errors gracefully, providing clear feedback to users.",
-            "rewritten": "The system SHALL handle input validation errors gracefully, providing clear feedback to users."
-        },
-        {
-            "id": "NFR-69",
-            "original": "The system SHALL implement appropriate retry mechanisms for transient errors.",
-            "rewritten": "The system SHALL implement appropriate retry mechanisms for transient errors."
-        },
-        {
-            "id": "NFR-75",
-            "original": "The system SHALL provide appropriate feedback for user actions.",
-            "rewritten": "The system SHALL provide appropriate feedback for user actions."
-        },
-        {
-            "id": "NFR-81",
-            "original": "The system SHALL ensure sufficient color contrast for text and interactive elements.",
-            "rewritten": "The system SHALL ensure sufficient color contrast for text and interactive elements."
-        },
-        {
-            "id": "NFR-88",
-            "original": "The system SHALL ensure that date, time, and number formats are appropriate for the selected language and locale.",
-            "rewritten": "The system SHALL ensure that date, time, and number formats are appropriate for the selected language and locale."
-        },
-        {
-            "id": "NFR-91",
-            "original": "The system SHALL implement language detection to suggest the appropriate language based on user settings and location.",
-            "rewritten": "The system SHALL implement language detection to suggest the appropriate language based on user settings and location."
-        },
-        {
-            "id": "NFR-98",
-            "original": "The system SHALL provide appropriate defaults to reduce the need for user configuration.",
-            "rewritten": "The system SHALL provide appropriate defaults to reduce the need for user configuration."
-        },
-        {
-            "id": "NFR-121",
-            "original": "The system SHALL maintain appropriate records for regulatory compliance and auditing.",
-            "rewritten": "The system SHALL maintain appropriate records for regulatory compliance and auditing."
-        },
-        {
-            "id": "NFR-125",
-            "original": "The system SHALL provide appropriate attribution for third-party content.",
-            "rewritten": "The system SHALL provide appropriate attribution for third-party content."
-        },
-        {
-            "id": "NFR-156",
-            "original": "The system SHALL use appropriate terminology and language for the local context.",
-            "rewritten": "The system SHALL use appropriate terminology and language for the local context."
-        },
-        {
-            "id": "NFR-157",
-            "original": "The system SHALL support local date and time formats, including Hijri calendar references where appropriate.",
-            "rewritten": "The system SHALL support local date and time formats, including Hijri calendar references where appropriate."
-        },
-        {
-            "id": "NFR-161",
-            "original": "The system SHALL implement appropriate content moderation policies for politically sensitive content.",
-            "rewritten": "The system SHALL implement appropriate content moderation policies for politically sensitive content."
         }
     ]
 }

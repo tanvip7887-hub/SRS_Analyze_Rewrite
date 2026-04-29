@@ -1,16 +1,14 @@
 import re
 import time
-from openai import OpenAI
+import os
+from groq import Groq
 
 
 class RewriteEngine:
 
-    def __init__(self,
-                 base_url="http://localhost:1234/v1",
-                 model="qwen2.5-coder-1.5b-instruct"):
-
-        self.client = OpenAI(base_url=base_url, api_key="lm-studio")
-        self.model = model
+    def __init__(self):
+        self.client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+        self.model = "llama-3.3-70b-versatile"
         self.BATCH_SIZE = 8
         self.RETRY_DELAY = 2
 
@@ -26,18 +24,12 @@ class RewriteEngine:
 
     def enforce_shall(self, text: str) -> str:
         text = text.strip()
-
-        # Remove starting variations
         text = re.sub(r"^(the system|system)\s+",
                       "", text, flags=re.IGNORECASE)
-
         text = self.normalize_modals(text)
-
         if not text.lower().startswith("shall"):
             text = "SHALL " + text
-
         text = "The system " + text.lstrip()
-
         return text
 
     def clean_sentence(self, text: str) -> str:
@@ -57,40 +49,42 @@ class RewriteEngine:
             [f"[{item['id']}] {item['text']}" for item in batch]
         )
 
-        prompt = f"""
-You are a Software Requirements Engineering expert.
+        prompt = f"""You are a Software Requirements Engineering expert specializing in IEEE 830 SRS standards.
 
-Rewrite each requirement so that:
-- It is clear
-- It is atomic
-- It is testable
-- It starts EXACTLY with: The system SHALL
-- One sentence only
-- Keep the same ID format
+Your task is to rewrite ambiguous software requirements to make them clear, atomic, and testable.
 
-STRICT OUTPUT FORMAT:
+Rules:
+- Each rewritten requirement MUST start with exactly: The system SHALL
+- Replace all vague terms (fast, efficient, user-friendly, easy, good, quick, simple, etc.) with specific measurable criteria
+- Make it atomic — one requirement per item
+- Keep it one sentence only
+- Preserve the original intent
+- Keep the same ID format exactly
+
+STRICT OUTPUT FORMAT (no extra text, no explanations):
 [FR-01] The system SHALL ...
+[FR-02] The system SHALL ...
 
-Rewrite:
+Requirements to rewrite:
 
 {text_block}
 """
 
-        for _ in range(2):
+        for attempt in range(3):
             try:
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[{"role": "user", "content": prompt}],
-                    max_tokens=1800,
-                    temperature=0.05,
+                    max_tokens=2048,
+                    temperature=0.1,
                 )
-
                 return response.choices[0].message.content.strip()
 
-            except Exception:
+            except Exception as e:
+                print(f"Groq attempt {attempt + 1} failed: {e}")
                 time.sleep(self.RETRY_DELAY)
 
-        # Simple fallback (no aggressive rewrite)
+        # Fallback
         return "\n".join(
             [f"[{item['id']}] {self.enforce_shall(item['text'])}"
              for item in batch]
@@ -109,16 +103,14 @@ Rewrite:
         matches = re.findall(pattern, raw_output)
 
         for req_id, sentence in matches:
-
             req_id = req_id.strip()
             sentence = sentence.strip()
-
             if req_id in batch_ids:
                 sentence = self.enforce_shall(sentence)
                 sentence = self.clean_sentence(sentence)
                 parsed[req_id] = sentence
 
-        # fallback if LLM misses something
+        # Fallback for any missed items
         for item in batch:
             if item["id"] not in parsed:
                 parsed[item["id"]] = self.enforce_shall(item["text"])
@@ -134,9 +126,11 @@ Rewrite:
         output = []
         total = len(ambiguous_list)
 
-        for i in range(0, total, self.BATCH_SIZE):
+        print(f"Rewriting {total} ambiguous requirements using Groq (Llama 3.1 70B)...")
 
+        for i in range(0, total, self.BATCH_SIZE):
             batch = ambiguous_list[i:i + self.BATCH_SIZE]
+            print(f"  Processing batch {i // self.BATCH_SIZE + 1} ({len(batch)} items)...")
 
             raw = self.rewrite_batch(batch)
             parsed = self.parse_output(raw, batch)
@@ -148,6 +142,7 @@ Rewrite:
                     "rewritten": parsed[item["id"]]
                 })
 
+        print("Rewrite complete!")
         return output
 
 
