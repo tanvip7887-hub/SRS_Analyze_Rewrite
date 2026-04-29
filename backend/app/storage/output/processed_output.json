@@ -1,0 +1,1118 @@
+{
+    "requirements": {
+        "FR-01": "The system SHALL provide a self-registration process for job seekers.",
+        "FR-02": "The system SHALL support account activation by user mobile number",
+        "FR-03": "The system SHALL collect the following information from job seekers through a multi-level onboarding process (via mobile/email): Level 1: First and last name, email, mobile number, password, gender Level 2: Education, work experience, skills, training, certificates, recent salary (optional), current address, permanent address/residence Level 3 (optional): Social media links (e.g., LinkedIn, IEEE, X), personal statement, bio",
+        "FR-04": "The system SHALL support resume/CV upload in common formats (PDF, DOCX, TXT).",
+        "FR-05": "The system SHALL offer the CV to AI engine to automatically extract information from uploaded resumes/CVs using AI parsing technology and add the extracted information to the profile.",
+        "FR-06": "The system SHALL allow job seekers to build their profiles using a staged, stepwise form with popup prompts for the following sections: Education: Degree, institution Experience: Company, role, duration Skills: Primary/secondary; soft/hard Preferences: Job type, desired salary, preferred location",
+        "FR-07": "The system SHALL allow job seekers to edit and update their profiles at any time.",
+        "FR-08": "The system SHALL provide a recommendation to encourage job seekers to complete their profiles and to explore opportunities aligned with their broader skills, interests, and experiences beyond formal education and training.",
+        "FR-09": "The system SHALL allow job seekers to set job preferences including job type, industry, location, salary expectations, and work arrangements.",
+        "FR-10": "The system SHALL provide privacy controls that allow job seekers to set visibility preferences for their profile (public or private), and request account deactivation or deletion.",
+        "FR-11": "The system SHALL generate a shareable public profile URL/QR Code for each job seeker, if activated by the user.",
+        "FR-12": "The system SHALL allow the job seeker to upload supplementary documents (i.e. certificate )",
+        "FR-13": "The system SHALL provide a stepwise registration process for employers: Level 1: Company name, email, mobile number, company ID, and registration number (if registered) Level 2: Website, industry, company size, address, company description, and attachments for supplementary documents",
+        "FR-14": "The system SHALL require account activation through a one-time password (OTP) sent to the registered mobile number.",
+        "FR-15": "The system SHALL provide an employer verification process that includes automatic verification using official information such as the employer’s registration number, VAT number, and registered mobile number as recorded in government databases.",
+        "FR-16": "If automatic verification fails, the Ministry of Labor (MoL) SHALL be able to manually verify the employer’s account based on submitted registration details and/or direct contact.",
+        "FR-17": "The system SHALL display a ⬛ Verified Employer badge next to the names of verified companies to enhance trust for job seekers and provide added value to employers who complete the verification process.",
+        "FR-18": "The system SHALL provide a company profile page that showcases the employer's information, job openings, and company background.",
+        "FR-19": "The system SHALL allow employers to upload company logo, and images to enhance their profile. In addition to documents such as company registration and manage uploaded documents",
+        "FR-20": "The system SHALL provide a dashboard for employers to manage job postings, view matched job seekers, create shortlists of interested or qualified candidates, and track key metrics.",
+        "FR-21": "The system SHALL allow the employer to upload supplementary documents (i.e. company registration certificate)",
+        "FR-22": "The system SHALL provide a registration and onboarding process for external job sites.",
+        "FR-23": "The system SHOULD issue a unique API key or token to each partner for secure access, with support for optional IP whitelisting, usage limits, and token expiration management to ensure controlled and secure integration.",
+        "FR-24": "The system SHOULD support job posting via a secure RESTful Push API, allowing external platforms to submit job opportunities directly to the job matching system.",
+        "FR-25": "The system SHALL allow external job sites to configure data mapping between their system and the platform, provide the sites with the standard schema to successfully integrate with the platform",
+        "FR-26": "The system SHOULD provide a testing environment for external job sites to validate their integration.",
+        "FR-27": "The system SHOULD implement comprehensive error handling and response logging by providing clear API response codes with descriptive messages for success, failure, duplicates, and validation errors.",
+        "FR-28": "The system SHOULD grant external platforms access to view submission logs for monitoring and troubleshooting purposes.",
+        "FR-29": "The system SHOULD return a unique job ID as a confirmation response after a job is successfully pushed via the API, enabling accurate record-keeping and integration synchronization for external systems.",
+        "FR-30": "The system SHALL automatically tag each job post with the name of the source platform (e.g., “Source: samplejobsite.ps”) and include a backlink to the original job advertisement.",
+        "FR-31": "The system SHOULD support job synchronization of updates via the API, enabling external job sites to modify job details—such as deadline extensions, description edits, or early closure/deletion/deactivation—using the assigned job ID.",
+        "FR-32": "The system SHOULD provide an optional sync dashboard—a lightweight web interface or endpoint—that allows partners to review the status of jobs posted via the API, including indicators for synced, failed, pending, and archived records.",
+        "FR-33": "The system SHOULD also offer periodic or real-time access to integration usage statistics—such as the number of jobs submitted, matched, and viewed—for transparency, performance tracking, and reporting purposes.",
+        "FR-34": "The system SHOULD provide access to the up-to-date API schema (e.g., via Swagger) and detailed field validation rules to ensure proper formatting and structure of job postings submitted through the API.",
+        "FR-35": "The system SHOULD provide an option for source platforms to configure whether their attribution (e.g., source platform name) appears publicly on job postings or is only visible within the admin panel and system logs.",
+        "FR-36": "The system SHOULD maintain an audit trail at the job level, recording which external job site created or modified each posting, and display this information within the MoL admin dashboard for traceability and accountability.",
+        "FR-37": "The system SHALL provide a comprehensive user management interface for administrators.",
+        "FR-38": "The system SHALL allow authorized administrators to add and manage core entities on the platform, including job seekers, employers, and job offerings (opportunities).",
+        "FR-39": "The system SHALL provide user management capabilities for administrators, including the ability to view, approve, ban, or deactivate user accounts, reset account credentials, and monitor account statuses.",
+        "FR-40": "The system SHALL provide tools for administrators to assist users with account recovery and technical issues, view pending employer registrations and approve them based on submitted profile information.",
+        "FR-41": "The system SHALL maintain an audit log of all administrative actions for security and accountability.",
+        "FR-42": "The system SHALL allow authorized administrators to define and update system settings if needed.",
+        "FR-43": "The system SHALL allow authorized administrators to view and manage static reference files, including skills, jobs, trainings, and other related datasets.",
+        "FR-44": "The system SHALL allow authorized administrators to manage system taxonomies such as the skills list, occupations catalog, training programs, and other platform constants or reference values.",
+        "FR-45": "The system SHALL allow administrators to oversee job offerings by viewing active and inactive postings, changes in posts, and to suspend or remove job offerings that are deemed inappropriate or violate platform policies.",
+        "FR-46": "The system SHALL provide comprehensive statistics and reporting features, allowing administrators to download reports on job postings by sector, region, or industry; user registrations; top searches from both job seekers and employers; user interactions with job offers; and overall system metrics.",
+        "FR-49": "The system SHALL implement secure authentication mechanisms including username/password, email verification, and multi-factor authentication options.",
+        "FR-50": "The system SHALL enforce strong password policies with configurable parameters.",
+        "FR-51": "The system SHALL implement role-based access control to restrict access to features and data based on user roles.",
+        "FR-52": "The system SHALL provide session management with configurable timeout settings.",
+        "FR-53": "The system SHALL maintain detailed access logs for security monitoring and auditing.",
+        "FR-54": "The system SHALL provide a structured job posting form for employers to create job listings.",
+        "FR-55": "The system SHALL provide a structured job posting form that allows employers to add new job opportunities with the following fields: Job title, summary, and required skills (with support for file upload or copy/paste input) Contract type (e.g., full-time, part-time, training, project-based) Required education level Application deadline with an optional auto-close feature Work format selection (Physical with employment location, Online, or Hybrid) Gender, number of employees, etc Required languages and proficiency levels Link to the job if available. More detailed features on the job post to be provided.",
+        "FR-56": "The system SHALL support standardized job categories, skills, and qualifications to facilitate accurate matching. For this requirement, the system SHALL ensure that all input data complies with the Schema.org JobPosting standard for semantic compatibility and structured data integrity.",
+        "FR-57": "The system SHALL allow employers to manage their job postings by editing job details, extending application deadlines, and set job posting visibility (public, private, or targeted) posts when necessary.",
+        "FR-58": "The system SHALL support job posting expiration and renewal processes.",
+        "FR-59": "The system SHALL provide a comprehensive search interface for job seekers to find relevant opportunities.",
+        "FR-60": "The search interface SHALL support both basic (search by single keyword) and advanced search modes based on employer-defined attributes.",
+        "FR-61": "The system SHALL provide semantic search capabilities that understand the intent behind search queries.",
+        "FR-62": "The system SHALL provide a search engine with advanced filtering capabilities, allowing job seekers to search for jobs using the following criteria: Keywords (text) Location Salary range Employment type Date posted Application deadline Job-specific requirements (e.g., skills, education, training, years of experience) Company sector/industry (e.g., IT, Health, NGO, Construction)",
+        "FR-63": "The system SHALL display search results with relevance/skills-matching ranking and sorting options. In addition, when user login the system SHALL display recommended jobs based on results generated by AI matching engine.",
+        "FR-64": "The system SHALL also include a favorites feature (e.g., heart button ) for users to save jobs of interest.",
+        "FR-65": "The system SHALL support saved searches with notification options for new matching jobs.",
+        "FR-66": "The system SHALL allow job seekers to bookmark and save jobs by adding them to an “Interested List ”, and to save custom search filters for future use.",
+        "FR-67": "The system SHALL provide employers with tools to manage the status of job postings.",
+        "FR-68": "The system SHALL support the following job posting statuses: draft, active, paused, expired, and archived.",
+        "FR-69": "The system SHALL maintain a history of status changes for audit and reporting purposes.",
+        "FR-70": "The system SHALL implement AI-driven matching algorithms to connect job seekers with relevant job opportunities.",
+        "FR-71": "The system SHALL use a scoring algorithm to calculate a match score between job seekers and job postings minimally based on the following criteria: Skill overlap Education match Training match Location match Experience range Salary expectation range",
+        "FR-72": "The system SHALL generate shortlists of top-matching candidates (e.g., top 100) for each job posting to assist employers in the selection process.",
+        "FR-73": "The system SHALL use natural language processing (NLP) to understand the semantic meaning of job descriptions and resumes beyond keyword matching.",
+        "FR-74": "The system SHALL perform keyword and semantic analysis on posted job descriptions to identify key attributes such as required skills, experience levels, and job categories.",
+        "FR-75": "The system SHALL allow administrators to define and adjust a minimum match threshold (e.g., 60%) that determines which job matches are displayed to users.",
+        "FR-76": "The system SHALL rank/order job postings for each job seeker based on their individual match percentage, displaying the most relevant opportunities first.",
+        "FR-77": "The system SHALL support two-way matching, where job seekers receive ranked job opportunities based on match percentage, and employers receive reverse matches with ranked lists of suitable job seekers for their postings.",
+        "FR-78": "The system SHALL allow configuration of matching parameters to adjust the importance of different factors.",
+        "FR-79": "The system SHALL implement AI-powered resume parsing to extract structured information from uploaded documents.",
+        "FR-80": "The system SHALL extract the following information from resumes: personal details, contact information, education history, work experience, skills, certifications, and achievements.",
+        "FR-81": "The system SHALL support multiple languages in resume parsing, with primary focus on Arabic and English.",
+        "FR-82": "The system SHALL identify and standardize skills mentioned in resumes to facilitate matching.",
+        "FR-83": "The system SHALL provide confidence scores for extracted information and highlight areas that may need manual verification.",
+        "FR-84": "The system SHALL allow job seekers to review and correct parsed information.",
+        "FR-85": "The system SHALL provide personalized job recommendations for job seekers based on their profile, preferences, and platform activity.",
+        "FR-86": "The system SHALL recommend suitable job seekers to employers based on job requirements and matching criteria.",
+        "FR-87": "The system SHALL use collaborative filtering to recommend jobs based on similar user behaviors and preferences.",
+        "FR-88": "The system SHALL incorporate content-based filtering to recommend jobs similar to those the user has shown interest in.",
+        "FR-89": "The system SHALL consider location, salary expectations, and work arrangement preferences in recommendations.",
+        "FR-90": "The system SHALL provide employers with candidate recommendations for their job postings.",
+        "FR-91": "The system SHALL rank candidates based on match quality, highlighting the strengths and potential gaps of each candidate.",
+        "FR-92": "The system SHALL allow employers to set minimum qualification thresholds for automatic candidate filtering.",
+        "FR-93": "The system SHALL allow employers to search the candidate database using advanced filtering options.",
+        "FR-94": "The system SHALL respect candidate privacy settings when making recommendations to employers.",
+        "FR-95": "The system SHALL provide insights on candidate availability, salary expectations, and potential fit.",
+        "FR-96": "The system SHALL allow employers to save promising candidates to talent pools for future opportunities (add to shortlist).",
+        "FR-97": "The system SHALL support integration with external job sites based on recommendations by MoL and PEF.",
+        "FR-98": "The system SHOULD provide APIs for real-time job data synchronization with external job sites.",
+        "FR-99": "The system SHOULD implement data mapping and transformation to standardize job postings from different sources.",
+        "FR-100": "The system SHOULD support both pull (importing jobs from external sites) and push (exporting jobs to external sites) integration models.",
+        "FR-101": "The system SHOULD maintain synchronization logs and provide error handling for failed integrations.",
+        "FR-102": "The system SHOULD support scheduled and on-demand synchronization options.",
+        "FR-103": "The system SHOULD provide a dashboard to monitor integration status and data flow with external job sites.",
+        "FR-104": "The system SHOULD integrate with relevant government databases for data verification and enrichment.",
+        "FR-105": "The system SHOULD support integration with the MoL and PEF existing databases and systems.",
+        "FR-106": "The system SHOULD support verification of educational credentials through integration with educational institution databases.",
+        "FR-107": "The system SHOULD provide options for identity verification through government ID systems.",
+        "FR-108": "The system SHOULD maintain audit trails of all data exchanges with government systems.",
+        "FR-109": "The system SHOULD respect data privacy regulations when accessing and using government data.",
+        "FR-110": "The system SHOULD provide a comprehensive API framework for integration with external systems.",
+        "FR-111": "The system SHOULD implement RESTful APIs with JSON data format as the primary integration method.",
+        "FR-112": "The system SHOULD provide detailed API documentation with examples and testing tools.",
+        "FR-113": "The system SHOULD implement OAuth 2.0 for API authentication and authorization.",
+        "FR-114": "The system SHOULD support API versioning to ensure backward compatibility.",
+        "FR-115": "The system SHALL track and record user activities for analysis and reporting.",
+        "FR-116": "The system SHALL monitor job seeker activities including profile views, job searches, applications, and interactions.",
+        "FR-117": "The system SHALL TRACK employer activities including job postings, candidate searches.",
+        "FR-118": "The system SHALL implement data retention policies for activity logs in compliance with regulations.",
+        "FR-119": "MOL Life dashboard should include current logins, number of current logins and last sessions, with links to these users profiles",
+        "FR-120": "The system SHOULD generate employment statistics and labor market insights from platform data.",
+        "FR-121": "The system SHOULD track key metrics including job posting trends, application rates, hiring rates, and time-to-fill.",
+        "FR-122": "The system SHOULD provide industry-specific analytics on job market demand and supply.",
+        "FR-123": "The system SHOULD analyze skill demand trends to identify emerging requirements and skill gaps.",
+        "FR-124": "The system SHOULD generate geographic distribution reports for jobs and candidates.",
+        "FR-125": "The system SHOULD provide salary range analytics by industry, position, and location.",
+        "FR-126": "The system SHOULD track employment outcomes and career progression where data is available.",
+        "FR-127": "The system SHOULD generate periodic labor market reports for government stakeholders.",
+        "FR-128": "The system SHOULD monitor and report on system performance metrics.",
+        "FR-129": "The system SHOULD track matching algorithm performance including accuracy, precision, recall, and user satisfaction.",
+        "FR-130": "The system SHOULD monitor system usage patterns including peak times, popular features, and user engagement.",
+        "FR-131": "The system SHOULD track technical performance metrics including response times, resource utilization, and error rates.",
+        "FR-132": "The system SHOULD provide dashboards for administrators to monitor system health and performance.",
+        "FR-133": "The system SHOULD generate alerts for performance issues or anomalies.",
+        "FR-134": "The system SHOULD maintain historical performance data for trend analysis and capacity planning.",
+        "FR-135": "The system SHOULD provide a flexible reporting framework for generating custom reports through seamless integration with existing and available reporting tools such as Microsoft Power BI.",
+        "FR-136": "The system SHOULD allow administrators to define report templates with configurable parameters.",
+        "FR-137": "The system SHOULD support various report formats including tabular data, charts, and visualizations.",
+        "FR-138": "The system SHOULD allow scheduling of recurring reports with automated distribution.",
+        "FR-139": "The system SHOULD support export of reports in common formats (PDF, Excel, CSV).",
+        "FR-140": "The system SHOULD provide a report builder interface for users with appropriate permissions.",
+        "FR-141": "The system SHOULD maintain a library of saved reports for quick access.",
+        "FR-142": "The system SHOULD implement access controls to ensure users can only view reports appropriate to their role.",
+        "FR-143": "The system SHALL send email notifications for important events and updates.",
+        "FR-144": "The system SHALL support customizable email templates with dynamic content.",
+        "FR-145": "The system SHALL allow users to configure their email notification preferences.",
+        "FR-146": "The system SHALL support both immediate and digest email notifications.",
+        "FR-147": "The system SHALL log all emails notifications.",
+        "FR-148": "The system SHALL comply with anti-spam regulations and best practices.",
+        "FR-149": "The system SHALL provide an in-app notification center for users.",
+        "FR-150": "The system SHALL display real-time notifications for important events and updates.",
+        "FR-151": "The system SHALL provide weekly job recommendations to job seekers based on their search history and profile information.",
+        "FR-152": "The system SHALL maintain a notification history for users to review past notifications.",
+        "FR-153": "The system SHALL allow users to configure their in-app notification preferences.",
+        "FR-154": "The system SHALL support different notification types with appropriate visual indicators.",
+        "FR-155": "The system SHALL provide notification management tools for users to mark as read, delete, or take action on notifications.",
+        "FR-156": "The system SHALL provide SMS notifications for critical updates and time- sensitive information (byt the integration with SMS service providers (gateway)). Such as welcoming SMS with a code for user registration, employer registration, and SMS for resetting the password.",
+        "FR-157": "The system SHALL allow users to opt-in to SMS notifications and provide their mobile number.",
+        "FR-158": "The system SHALL limit SMS notifications to essential communications to avoid overwhelming users.",
+        "FR-159": "The system SHALL track SMS delivery status for monitoring and troubleshooting. + loging as sms messages",
+        "FR-160": "The system SHALL comply with telecommunications regulations regarding SMS messaging.",
+        "FR-161": "The system SHALL provide a content management system (CMS) for publishing news and updates.",
+        "FR-162": "The system SHALL allow administrators to create, edit, and publish articles and announcements.",
+        "FR-163": "The system SHALL support rich text formatting, images, and embedded media in content.",
+        "FR-164": "The system SHALL provide content categorization and tagging for organization.",
+        "FR-165": "The system SHALL display relevant news and updates on user dashboards based on their profile.",
+        "FR-166": "The system SHALL maintain an archive of past news and updates with search functionality.",
+        "FR-167": "The system SHALL provide a comprehensive FAQ and help center. In addition, list of laws, regulations and contract types regulations.",
+        "FR-168": "The system SHALL organize help content by topic and user role for easy navigation.",
+        "FR-169": "The system SHALL implement a search function for help content.",
+        "FR-170": "The system SHALL provide context-sensitive help throughout the platform.",
+        "FR-171": "The system SHALL allow administrators to update help content as the system evolves.",
+        "FR-172": "The system SHALL collect user feedback on help content effectiveness.",
+        "FR-173": "The system SHALL provide guided tours and tutorials for new users.",
+        "FR-174": "The system SHALL support multimedia help content including videos and interactive guides.",
+        "NFR-01": "The system SHALL provide page load times of less than 3 seconds for standard operations under normal load conditions.",
+        "NFR-02": "The system SHALL provide search results within 2 seconds for standard search queries.",
+        "NFR-03": "The system SHALL complete AI matching operations within 5 seconds for individual job-candidate matches.",
+        "NFR-04": "The system SHALL process batch operations (e.g., bulk candidate matching) within a timeframe proportional to the batch size, not exceeding 2 minutes for standard operations.",
+        "NFR-05": "The system SHALL maintain response time degradation of no more than 50% during peak load periods.",
+        "NFR-06": "The system SHALL support at least 1,000 concurrent users during normal operations.",
+        "NFR-07": "The system SHALL support at least 5,000 concurrent users during peak periods.",
+        "NFR-08": "The system SHALL process at least 100 job applications per minute during peak periods.",
+        "NFR-09": "The system SHALL support at least 500 new job postings per day.",
+        "NFR-10": "The system SHALL support at least 1,000 new user registrations per day.",
+        "NFR-11": "The system SHALL operate within the allocated server resources, utilizing no more than 80% of CPU capacity during normal operations.",
+        "NFR-12": "The system SHALL utilize no more than 80% of available memory during normal operations.",
+        "NFR-13": "The system SHALL require no more than 5TB of storage for the first year of operation, with a growth plan for subsequent years.",
+        "NFR-14": "The system SHALL optimize database queries to minimize I/O operations and response times.",
+        "NFR-15": "The system SHALL implement caching mechanisms to reduce resource utilization for frequently accessed data."
+    },
+    "duplicates": {
+        "summary": {
+            "total_requirements": 187,
+            "duplicate_groups": 3,
+            "similarity_threshold": 0.85
+        },
+        "duplicates": [
+            [
+                {
+                    "id": "FR-12",
+                    "text": "The system SHALL allow the job seeker to upload supplementary documents (i.e. certificate )"
+                },
+                {
+                    "id": "FR-21",
+                    "text": "The system SHALL allow the employer to upload supplementary documents (i.e. company registration certificate)"
+                }
+            ],
+            [
+                {
+                    "id": "FR-54",
+                    "text": "The system SHALL provide a structured job posting form for employers to create job listings."
+                },
+                {
+                    "id": "FR-55",
+                    "text": "The system SHALL provide a structured job posting form that allows employers to add new job opportunities with the following fields: Job title, summary, and required skills (with support for file upload or copy/paste input) Contract type (e.g., full-time, part-time, training, project-based) Required education level Application deadline with an optional auto-close feature Work format selection (Physical with employment location, Online, or Hybrid) Gender, number of employees, etc Required languages and proficiency levels Link to the job if available. More detailed features on the job post to be provided."
+                }
+            ],
+            [
+                {
+                    "id": "FR-86",
+                    "text": "The system SHALL recommend suitable job seekers to employers based on job requirements and matching criteria."
+                },
+                {
+                    "id": "FR-90",
+                    "text": "The system SHALL provide employers with candidate recommendations for their job postings."
+                }
+            ]
+        ]
+    },
+    "ambiguity": {
+        "FR-01": {
+            "flags": [
+                "vague_verb:process"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-02": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-03": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-04": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-05": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-06": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-07": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-08": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-09": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-10": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-11": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-12": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-13": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-14": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-15": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-16": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-17": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-18": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-19": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-20": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-21": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-22": {
+            "flags": [
+                "vague_verb:process"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-23": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-24": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-25": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-26": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-27": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-28": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-29": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-30": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-31": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-32": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-33": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-34": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-35": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-36": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-37": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-38": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-39": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-40": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-41": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-42": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-43": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-44": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-45": {
+            "flags": [
+                "vague_word:appropriate"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-46": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-49": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-50": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-51": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-52": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-53": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-54": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-55": {
+            "flags": [
+                "vague_word:etc"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-56": {
+            "flags": [
+                "multiple_actions"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-57": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-58": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-59": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-60": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-61": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-62": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-63": {
+            "flags": [
+                "multiple_actions"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-64": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-65": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-66": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-67": {
+            "flags": [
+                "vague_verb:manage"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-68": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-69": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-70": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-71": {
+            "flags": [
+                "vague_word:minimal"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-72": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-73": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-74": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-75": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-76": {
+            "flags": [
+                "quantity_expression:most"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-77": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-78": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-79": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-80": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-81": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-82": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-83": {
+            "flags": [
+                "weak_modal:may"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-84": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-85": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-86": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-87": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-88": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-89": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-90": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-91": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-92": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-93": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-94": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-95": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-96": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-97": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-98": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-99": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-100": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-101": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-102": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-103": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-104": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-105": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-106": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-107": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-108": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-109": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-110": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-111": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-112": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-113": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-114": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-115": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-116": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-117": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-118": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-119": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-120": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-121": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-122": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-123": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-124": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-125": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-126": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-127": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-128": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-129": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-130": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-131": {
+            "flags": [
+                "weak_modal:should",
+                "missing_measurement"
+            ],
+            "ambiguity_score": 0.67
+        },
+        "FR-132": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-133": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-134": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-135": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-136": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-137": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-138": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-139": {
+            "flags": [
+                "weak_modal:should"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-140": {
+            "flags": [
+                "weak_modal:should",
+                "vague_word:appropriate"
+            ],
+            "ambiguity_score": 0.67
+        },
+        "FR-141": {
+            "flags": [
+                "weak_modal:should",
+                "vague_word:quick"
+            ],
+            "ambiguity_score": 0.67
+        },
+        "FR-142": {
+            "flags": [
+                "weak_modal:should",
+                "vague_word:appropriate"
+            ],
+            "ambiguity_score": 0.67
+        },
+        "FR-143": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-144": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-145": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-146": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-147": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-148": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-149": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-150": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-151": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-152": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-153": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-154": {
+            "flags": [
+                "vague_word:appropriate"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "FR-155": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-156": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-157": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-158": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-159": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-160": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-161": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-162": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-163": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-164": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-165": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-166": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-167": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-168": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-169": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-170": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-171": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-172": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-173": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "FR-174": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-01": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-02": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-03": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-04": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-05": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-06": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-07": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-08": {
+            "flags": [
+                "vague_verb:process"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "NFR-09": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-10": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-11": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-12": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-13": {
+            "flags": [],
+            "ambiguity_score": 0.0
+        },
+        "NFR-14": {
+            "flags": [
+                "missing_measurement"
+            ],
+            "ambiguity_score": 0.33
+        },
+        "NFR-15": {
+            "flags": [
+                "time_expression:frequently"
+            ],
+            "ambiguity_score": 0.33
+        }
+    }
+}
